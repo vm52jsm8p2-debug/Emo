@@ -3,47 +3,48 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
-        body { margin: 0; overflow: hidden; background: #2e7d32; touch-action: none; font-family: sans-serif; }
+        body { margin: 0; overflow: hidden; background: #2e7d32; touch-action: none; font-family: 'Arial', sans-serif; }
         canvas { display: block; }
+        #score { position: absolute; top: 10px; left: 10px; color: white; font-size: 24px; font-weight: bold; }
     </style>
 </head>
 <body>
+<div id="score">Skor: 0</div>
 <canvas id="gameCanvas"></canvas>
 <script>
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
+    const scoreElement = document.getElementById("score");
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
     let x = canvas.width / 2, y = canvas.height - 100;
-    let dx = 5, dy = -5;
+    let dx = 4, dy = -4;
     let ballRadius = 10;
     let paddleWidth = 100, paddleX = (canvas.width - 100) / 2;
-
-    // Kale
-    let goalWidth = 150;
-    let goalX = (canvas.width - goalWidth) / 2;
+    let score = 0;
 
     canvas.addEventListener("touchmove", (e) => {
         paddleX = e.touches[0].clientX - paddleWidth / 2;
     });
 
+    function resetBall() {
+        x = canvas.width / 2;
+        y = canvas.height - 100;
+        dx = 4 + (score * 0.5); // Her golde top hızlanır
+        dy = -4 - (score * 0.5);
+    }
+
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // Saha Çizgileri
+        // Saha ve Kale
         ctx.strokeStyle = "white";
-        ctx.lineWidth = 3;
-        ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40); // Saha kenarı
-        ctx.beginPath();
-        ctx.moveTo(0, canvas.height/2); ctx.lineTo(canvas.width, canvas.height/2);
-        ctx.stroke();
+        ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
+        ctx.fillStyle = "white";
+        ctx.fillRect((canvas.width - 150) / 2, 0, 150, 20); // Kale
 
-        // Kale (Üstte)
-        ctx.fillStyle = "#fff";
-        ctx.fillRect(goalX, 0, goalWidth, 20);
-
-        // Oyuncu (Forvet)
+        // Forvet
         ctx.fillStyle = "#ffeb3b";
         ctx.fillRect(paddleX, canvas.height - 40, paddleWidth, 15);
 
@@ -54,14 +55,22 @@
         ctx.fill();
         ctx.closePath();
 
-        // Çarpışmalar
+        // Duvar ve Kale Çarpışmaları
         if(x + dx > canvas.width - ballRadius || x + dx < ballRadius) dx = -dx;
         
-        // Kale Gol Kontrolü
-        if(y < 20 && x > goalX && x < goalX + goalWidth) {
-            alert("GOL!!!");
-            x = canvas.width/2; y = canvas.height - 100; // Başa dön
+        // Gol!
+        if(y < 20 && x > (canvas.width - 150) / 2 && x < (canvas.width - 150) / 2 + 150) {
+            score++;
+            scoreElement.innerText = "Skor: " + score;
+            resetBall();
         } else if(y < ballRadius) { dy = -dy; }
+
+        // Top dışarı çıkarsa (Forveti geçerse)
+        if(y > canvas.height) {
+            score = 0;
+            scoreElement.innerText = "Skor: 0";
+            resetBall();
+        }
 
         // Forvet Çarpışması
         if(y + dy > canvas.height - 40 - ballRadius && x > paddleX && x < paddleX + paddleWidth) {
